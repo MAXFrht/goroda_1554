@@ -1,5 +1,4 @@
 from flask import Flask, request
-import os
 import logging
 import json
 import random
@@ -9,9 +8,9 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 cities = {
-    'москва': ['1540737/daa6e420d33102bf6947', '213044/7df73ae4cc715175059e'],
-    'нью-йорк': ['1652229/728d5c86707054d4745f', '1030494/aca7ed7acefde2606bdc'],
-    'париж': ['1540737/355c802a54c0d3c2ce38','965417/429d880b7c62324751f1']
+    'москва': ['1652229/1974bb97f2605e52044b', '1030494/20f302524e5de52ee7fe'],
+    'нью-йорк': ['1652229/a33e1abd04135f25a98b', '1540737/e8dd2f0e71210fb97f2'],
+    'париж': ['1652229/4c24ea9f61c8e1b93faa', '1652229/980a324c80188973e36a']
 }
 
 sessionStorage = {}
@@ -72,10 +71,6 @@ def handle_dialog(res, req):
                     'title': 'Нет',
                     'hide': True
 
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
                 }
             ]
 
@@ -99,8 +94,8 @@ def handle_dialog(res, req):
             elif 'нет' in req['request']['nlu']['tokens']:
                 res['response']['text'] = 'Ну и ладно!'
                 res['end_session'] = True
-            elif req['request']['original_utterance'].lower() == 'помощь':
-                res['response']['text'] = 'Это текст помомщи. Будь смелее и продолжи общение.'
+            elif "Покажи город на карте" == req['request']['original_utterance']:
+                res['response']['text'] = 'Показала. Сыграем еще? '
             else:
                 res['response']['text'] = 'Не понял ответа! Так да или нет?'
                 res['response']['buttons'] = [
@@ -113,14 +108,9 @@ def handle_dialog(res, req):
                         'title': 'Нет',
                         'hide': True
 
-                    },
-                    {
-                        'title': 'Помощь',
-                        'hide': True
                     }
                 ]
-        elif req['request']['original_utterance'].lower() == 'помощь':
-                res['response']['text'] = 'Это текст помомщи. Будь смелее и продолжи общение.'
+
         else:
 
             play_game(res, req)
@@ -144,12 +134,6 @@ def play_game(res, req):
         res['response']['card']['type'] = 'BigImage'
         res['response']['card']['title'] = 'Что это за город?'
         res['response']['card']['image_id'] = cities[city][attempt - 1]
-        res['response']['buttons'] = [
-            {
-                'title': 'Помощь',
-                'hide': True
-            }
-        ]
 
     else:
 
@@ -158,22 +142,23 @@ def play_game(res, req):
         if get_city(req) == city:
 
             res['response']['text'] = 'Правильно! Сыграем еще?'
+
             res['response']['buttons'] = [
                 {
-                    'title': 'Да',
-                    'hide': True
-
+                    "title": "Да",
+                    "hide": True
+                 },
+                {
+                    "title": "Нет",
+                    "hide": True
                 },
                 {
-                    'title': 'Нет',
-                    'hide': True
-
-                },
-                {
-                    'title': 'Помощь',
-                    'hide': True
+                    "title": "Покажи город на карте",
+                    "url": "https://yandex.ru/maps/?mode=search&text=%s" % (city),
+                    "hide": True
                 }
             ]
+
             sessionStorage[user_id]['guessed_cities'].append(city)
             sessionStorage[user_id]['game_started'] = False
             return
@@ -183,22 +168,6 @@ def play_game(res, req):
             res['response']['text'] = 'Неправильно'
             if attempt == 3:
                 res['response']['text'] = 'Вы пытались. Это ' + city.title() + '. Сыграем еще?'
-                res['response']['buttons'] = [
-                    {
-                        'title': 'Да',
-                        'hide': True
-
-                    },
-                    {
-                        'title': 'Нет',
-                        'hide': True
-
-                    },
-                    {
-                        'title': 'Помощь',
-                        'hide': True
-                    }
-                ]
                 sessionStorage[user_id]['game_started'] = False
                 sessionStorage[user_id]['guessed_cities'].append(city)
                 return
@@ -207,12 +176,6 @@ def play_game(res, req):
                 res['response']['card']['type'] = 'BigImage'
                 res['response']['card']['title'] = 'Неправильно. Вот тебе дополнительное фото'
                 res['response']['card']['image_id'] = cities[city][attempt - 1]
-                res['response']['buttons'] = [
-                    {
-                        'title': 'Помощь',
-                        'hide': True
-                    }
-                ]
 
     sessionStorage[user_id]['attempt'] += 1
 
@@ -245,5 +208,4 @@ def get_first_name(req):
 
 
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
+    app.run()
